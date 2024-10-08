@@ -1,7 +1,6 @@
 import { BrowserRouter as Router, Route, Routes, Link } from 'react-router-dom';
 import './App.css';
 import React, { useState, useEffect } from 'react';
-// import CommunicationForm from './CommunicationForm';
 import Login from './components/Login';
 import Signup from './components/Signup';
 import Home from './components/Home';
