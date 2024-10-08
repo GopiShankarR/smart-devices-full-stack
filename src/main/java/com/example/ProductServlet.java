@@ -80,14 +80,11 @@ protected void doGet(HttpServletRequest request, HttpServletResponse response) t
                 aidsArray = aidsString.substring(1, aidsString.length() - 1).split(",\\s*");
             }
 
-            // Check if we're filtering by ID or category
             if (id != null && id.equals(productId)) {
-                // Only add the product with the matching ID
                 Product product = new Product(productId, name, price, description, manufacturer, imageUrl, type, Arrays.asList(aidsArray));
                 products.add(product);
-                break; // No need to check further
+                break;
             } else if (category == null || category.equalsIgnoreCase(type)) {
-                // Add all products that match the category
                 Product product = new Product(productId, name, price, description, manufacturer, imageUrl, type, Arrays.asList(aidsArray));
                 products.add(product);
             }

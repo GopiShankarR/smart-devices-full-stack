@@ -140,8 +140,8 @@ public class SalesmanServlet extends HttpServlet {
         String username = jsonObject.get("username").getAsString();
         String confirmationNumber = jsonObject.get("confirmationNumber").getAsString();
         String deliveryDate = jsonObject.get("deliveryDate").getAsString();
-        String deliveryOption = jsonObject.get("deliveryOption").getAsString();  // Added
-        String status = jsonObject.get("status").getAsString();                  // Added
+        String deliveryOption = jsonObject.get("deliveryOption").getAsString(); 
+        String status = jsonObject.get("status").getAsString(); 
         String items = jsonObject.get("items").getAsString();
         String orderPlacedDate = jsonObject.get("orderPlacedDate").getAsString();
 
@@ -202,8 +202,8 @@ public class SalesmanServlet extends HttpServlet {
     private void updateOrder(JsonObject jsonObject, HttpServletResponse response) throws IOException {
     String confirmationNumber = jsonObject.get("confirmationNumber").getAsString();
     String newDeliveryDate = jsonObject.get("deliveryDate").getAsString();
-    String newDeliveryOption = jsonObject.get("deliveryOption").getAsString(); // Added
-    String newStatus = jsonObject.get("status").getAsString();                // Added
+    String newDeliveryOption = jsonObject.get("deliveryOption").getAsString();
+    String newStatus = jsonObject.get("status").getAsString(); 
     String newItems = jsonObject.get("items").getAsString();
     String newOrderPlacedDate = jsonObject.get("orderPlacedDate").getAsString();
 
