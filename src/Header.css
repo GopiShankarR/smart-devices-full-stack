@@ -1,0 +1,115 @@
+/* Header.css */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 20px;
+  background-color: #282c34;
+  border-bottom: 1px solid #e1e1e1;
+}
+
+.left-section {
+  display: flex;
+  align-items: center;
+  flex-grow: 1;
+}
+
+.logo {
+  font-size: 24px;
+  color: white;
+  text-decoration: none;
+  margin-right: 30px;
+}
+
+.nav-links {
+  display: flex;
+  gap: 20px;
+}
+
+.nav-item {
+  position: relative;
+}
+
+.nav-item a {
+  text-decoration: none;
+  color: white;
+  font-size: 16px;
+  font-weight: bold;
+  padding: 10px;
+  transition: color 0.3s ease;
+}
+
+.nav-item:hover a {
+  color: #007BFF;
+}
+
+.dropdown-menu {
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  background-color: #282c34;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  min-width: 160px;
+  z-index: 1;
+  border-radius: 4px;
+}
+
+.dropdown-menu li {
+  padding: 10px;
+}
+
+.dropdown-menu li a {
+  text-decoration: none;
+  color: white;
+  display: block;
+}
+
+.dropdown-menu li a:hover {
+  background-color: white;
+}
+
+.nav-item:hover .dropdown-menu {
+  display: block;
+}
+
+/* Right section */
+.header-actions {
+  display: flex;
+  align-items: center;
+}
+
+.cart-button {
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  padding: 10px 20px;
+  font-size: 16px;
+  cursor: pointer;
+  margin-right: 10px;
+  transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+.cart-button:hover {
+  background-color: #0056b3;
+}
+
+.cart-button:active {
+  transform: scale(0.98);
+}
+
+.login-link {
+  text-decoration: none;
+  color: #007bff;
+  font-size: 16px;
+  padding: 10px 15px;
+  border-radius: 5px;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.login-link:hover {
+  background-color: #e1e1e1;
+}
