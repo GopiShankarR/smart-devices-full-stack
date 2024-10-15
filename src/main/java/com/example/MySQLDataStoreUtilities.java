@@ -183,8 +183,7 @@ public class MySQLDataStoreUtilities {
     }
 
     return orders;
-}
-
+  }
 
   public static List<OrderInfo> getOrdersByUsername(String username) throws SQLException {
     String query = "SELECT u.user_id, u.username, o.confirmation_number, o.delivery_date, o.order_placed_date, o.status, o.delivery_option " +
@@ -253,100 +252,100 @@ public class MySQLDataStoreUtilities {
   }
 
   public static int getOrCreateCartId(String username) throws SQLException {
-      String cartCheckQuery = "SELECT cart_id FROM cart WHERE user_id = (SELECT user_id FROM users WHERE username = ?)";
-      String cartInsertQuery = "INSERT INTO cart (user_id) SELECT user_id FROM users WHERE username = ?";
+    String cartCheckQuery = "SELECT cart_id FROM cart WHERE user_id = (SELECT user_id FROM users WHERE username = ?)";
+    String cartInsertQuery = "INSERT INTO cart (user_id) SELECT user_id FROM users WHERE username = ?";
 
-      try (Connection conn = getConnection(); PreparedStatement checkStmt = conn.prepareStatement(cartCheckQuery)) {
-        checkStmt.setString(1, username);
-        ResultSet rs = checkStmt.executeQuery();
+    try (Connection conn = getConnection(); PreparedStatement checkStmt = conn.prepareStatement(cartCheckQuery)) {
+      checkStmt.setString(1, username);
+      ResultSet rs = checkStmt.executeQuery();
 
-        if (rs.next()) {
-            return rs.getInt("cart_id"); 
-        } else {
-          try (PreparedStatement insertStmt = conn.prepareStatement(cartInsertQuery)) {
-            insertStmt.setString(1, username);
-            insertStmt.executeUpdate();
-          }
+      if (rs.next()) {
+          return rs.getInt("cart_id"); 
+      } else {
+        try (PreparedStatement insertStmt = conn.prepareStatement(cartInsertQuery)) {
+          insertStmt.setString(1, username);
+          insertStmt.executeUpdate();
+        }
 
-          ResultSet newRs = checkStmt.executeQuery();
-          if (newRs.next()) {
-            return newRs.getInt("cart_id");
-          }
+        ResultSet newRs = checkStmt.executeQuery();
+        if (newRs.next()) {
+          return newRs.getInt("cart_id");
         }
       }
-      return -1;
+    }
+    return -1;
   }
 
-    public static void addItemToCart(int cartId, String itemId, double itemPrice, int quantity, String imageUrl) throws SQLException {
-      String query = "INSERT INTO cart_items (cart_id, product_id, quantity, image_url) " +
-                      "VALUES (?, ?, ?, ?) " +
-                      "ON DUPLICATE KEY UPDATE quantity = quantity + VALUES(quantity)";
-      
-      try (Connection conn = getConnection(); PreparedStatement stmt = conn.prepareStatement(query)) {
-        stmt.setInt(1, cartId);
-        stmt.setString(2, itemId);
-        stmt.setInt(3, quantity);
-        stmt.setString(4, imageUrl);
-        stmt.executeUpdate();
+  public static void addItemToCart(int cartId, String itemId, double itemPrice, int quantity, String imageUrl) throws SQLException {
+    String query = "INSERT INTO cart_items (cart_id, product_id, quantity, image_url) " +
+                    "VALUES (?, ?, ?, ?) " +
+                    "ON DUPLICATE KEY UPDATE quantity = quantity + VALUES(quantity)";
+    
+    try (Connection conn = getConnection(); PreparedStatement stmt = conn.prepareStatement(query)) {
+      stmt.setInt(1, cartId);
+      stmt.setString(2, itemId);
+      stmt.setInt(3, quantity);
+      stmt.setString(4, imageUrl);
+      stmt.executeUpdate();
+    }
+  }
+
+  public static void decreaseItemQuantity(int cartId, String itemId) throws SQLException {
+    String updateQuery = "UPDATE cart_items SET quantity = quantity - 1 WHERE cart_id = ? AND product_id = ? AND quantity > 0";
+    String deleteQuery = "DELETE FROM cart_items WHERE cart_id = ? AND product_id = ? AND quantity = 0";
+
+    try (Connection conn = getConnection(); PreparedStatement updateStmt = conn.prepareStatement(updateQuery)) {
+
+      updateStmt.setInt(1, cartId);
+      updateStmt.setString(2, itemId);
+      updateStmt.executeUpdate();
+
+      try (PreparedStatement deleteStmt = conn.prepareStatement(deleteQuery)) {
+        deleteStmt.setInt(1, cartId);
+        deleteStmt.setString(2, itemId);
+        deleteStmt.executeUpdate();
       }
     }
+  }
 
-    public static void decreaseItemQuantity(int cartId, String itemId) throws SQLException {
-      String updateQuery = "UPDATE cart_items SET quantity = quantity - 1 WHERE cart_id = ? AND product_id = ? AND quantity > 0";
-      String deleteQuery = "DELETE FROM cart_items WHERE cart_id = ? AND product_id = ? AND quantity = 0";
+  public static void deleteItemFromCart(int cartId, String itemId) throws SQLException {
+    String query = "DELETE FROM cart_items WHERE cart_id = ? AND product_id = ?";
 
-      try (Connection conn = getConnection(); PreparedStatement updateStmt = conn.prepareStatement(updateQuery)) {
+    try (Connection conn = getConnection(); PreparedStatement stmt = conn.prepareStatement(query)) {
+      stmt.setInt(1, cartId);
+      stmt.setString(2, itemId);
+      stmt.executeUpdate();
+    }
+  }
 
-        updateStmt.setInt(1, cartId);
-        updateStmt.setString(2, itemId);
-        updateStmt.executeUpdate();
+  public static List<CartItem> getCartItems(String username) throws SQLException {
+    List<CartItem> cartItems = new ArrayList<>();
+    String query = "SELECT p.product_id, p.product_name, p.imageurl, p.price, ci.quantity " +
+                    "FROM cart_items ci " +
+                    "JOIN cart c ON ci.cart_id = c.cart_id " +
+                    "JOIN products p ON ci.product_id = p.product_id " +
+                    "JOIN users u ON u.user_id = c.user_id " +
+                    "WHERE u.username = ?";
 
-        try (PreparedStatement deleteStmt = conn.prepareStatement(deleteQuery)) {
-          deleteStmt.setInt(1, cartId);
-          deleteStmt.setString(2, itemId);
-          deleteStmt.executeUpdate();
-        }
+    try (Connection conn = getConnection();
+        PreparedStatement stmt = conn.prepareStatement(query)) {
+
+      stmt.setString(1, username);
+      ResultSet rs = stmt.executeQuery();
+
+      while (rs.next()) {
+        String productId = rs.getString("product_id");
+        String productName = rs.getString("product_name");
+        String productImage = rs.getString("imageurl");
+        double price = rs.getDouble("price");
+        int quantity = rs.getInt("quantity");
+
+        CartItem cartItem = new CartItem(username, productId, productName, productImage, price, quantity);
+        cartItems.add(cartItem);
       }
     }
-
-    public static void deleteItemFromCart(int cartId, String itemId) throws SQLException {
-      String query = "DELETE FROM cart_items WHERE cart_id = ? AND product_id = ?";
-
-      try (Connection conn = getConnection(); PreparedStatement stmt = conn.prepareStatement(query)) {
-        stmt.setInt(1, cartId);
-        stmt.setString(2, itemId);
-        stmt.executeUpdate();
-      }
-    }
-
-    public static List<CartItem> getCartItems(String username) throws SQLException {
-        List<CartItem> cartItems = new ArrayList<>();
-        String query = "SELECT p.product_id, p.product_name, p.imageurl, p.price, ci.quantity " +
-                       "FROM cart_items ci " +
-                       "JOIN cart c ON ci.cart_id = c.cart_id " +
-                       "JOIN products p ON ci.product_id = p.product_id " +
-                       "JOIN users u ON u.user_id = c.user_id " +
-                       "WHERE u.username = ?";
-
-        try (Connection conn = getConnection();
-             PreparedStatement stmt = conn.prepareStatement(query)) {
-
-            stmt.setString(1, username);
-            ResultSet rs = stmt.executeQuery();
-
-            while (rs.next()) {
-                String productId = rs.getString("product_id");
-                String productName = rs.getString("product_name");
-                String productImage = rs.getString("imageurl");
-                double price = rs.getDouble("price");
-                int quantity = rs.getInt("quantity");
-
-                CartItem cartItem = new CartItem(username, productId, productName, productImage, price, quantity);
-                cartItems.add(cartItem);
-            }
-        }
-        return cartItems;
-    }
+    return cartItems;
+  }
 
     public static double calculateTotalPrice(List<CartItem> cartItems) {
         return cartItems.stream().mapToDouble(item -> item.getPrice() * item.getQuantity()).sum();
