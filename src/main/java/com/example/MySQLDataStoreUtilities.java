@@ -356,26 +356,26 @@ public class MySQLDataStoreUtilities {
       String query = "SELECT store_id, store_name, street, city, state, zip_code FROM stores";
 
       try (Connection conn = getConnection();
-          PreparedStatement stmt = conn.prepareStatement(query);
-          ResultSet rs = stmt.executeQuery()) {
+        PreparedStatement stmt = conn.prepareStatement(query);
+        ResultSet rs = stmt.executeQuery()) {
 
-          while (rs.next()) {
-              int storeId = rs.getInt("store_id");
-              String storeName = rs.getString("store_name");
-              String street = rs.getString("street");
-              String city = rs.getString("city");
-              String state = rs.getString("state");
-              String zip_code = rs.getString("zip_code");
+        while (rs.next()) {
+          int storeId = rs.getInt("store_id");
+          String storeName = rs.getString("store_name");
+          String street = rs.getString("street");
+          String city = rs.getString("city");
+          String state = rs.getString("state");
+          String zip_code = rs.getString("zip_code");
 
-              Store store = new Store(storeId, storeName, street, city, state, zip_code);
-              stores.add(store);
-          }
+          Store store = new Store(storeId, storeName, street, city, state, zip_code);
+          stores.add(store);
+        }
       }
 
       return stores;
     }
 
- public static int saveOrder(String username, String confirmationNumber, double totalPrice, String deliveryOption, JsonObject addressObject, String orderPlacedDate, String deliveryDate, String status, String creditCardNumber, int storeId, JsonObject customerAddressObject) throws SQLException {
+  public static int saveOrder(String username, String confirmationNumber, double totalPrice, String deliveryOption, JsonObject addressObject, String orderPlacedDate, String deliveryDate, String status, String creditCardNumber, int storeId, JsonObject customerAddressObject) throws SQLException {
     System.out.println("---------------------------------- Inside saveOrder method ----------------------------------");
     System.out.println("u " + username + " confirmationNumber " + confirmationNumber + " totalPrice " + totalPrice + " deliveryOption " + deliveryOption + " addressObject " + addressObject + " orderPlacedDate " + orderPlacedDate + " deliveryDate " + deliveryDate + " status " + status + " creditCardNumber " + creditCardNumber + " storeId " + storeId + " customerAddressObject " + customerAddressObject);
 
@@ -390,345 +390,342 @@ public class MySQLDataStoreUtilities {
 
     int orderId = -1;
     try (Connection conn = getConnection(); PreparedStatement stmt = conn.prepareStatement(query, Statement.RETURN_GENERATED_KEYS)) {
-        stmt.setInt(1, userId);
-        stmt.setString(2, confirmationNumber);
-        stmt.setString(3, orderPlacedDate);
-        stmt.setString(4, deliveryOption);
-        stmt.setString(5, status);
-        stmt.setDouble(6, totalPrice);
-        stmt.setInt(7, storeId);
-        stmt.setNull(8, java.sql.Types.INTEGER);  
-        stmt.setNull(9, java.sql.Types.INTEGER);  
+      stmt.setInt(1, userId);
+      stmt.setString(2, confirmationNumber);
+      stmt.setString(3, orderPlacedDate);
+      stmt.setString(4, deliveryOption);
+      stmt.setString(5, status);
+      stmt.setDouble(6, totalPrice);
+      stmt.setInt(7, storeId);
+      stmt.setNull(8, java.sql.Types.INTEGER);  
+      stmt.setNull(9, java.sql.Types.INTEGER);  
 
-        stmt.setString(10, deliveryDate);
-        stmt.setString(11, creditCardNumber);
-        stmt.setDouble(12, 10);
+      stmt.setString(10, deliveryDate);
+      stmt.setString(11, creditCardNumber);
+      stmt.setDouble(12, 10);
 
-        stmt.executeUpdate();
+      stmt.executeUpdate();
 
-        ResultSet rs = stmt.getGeneratedKeys();
-        if (rs.next()) {
-            orderId = rs.getInt(1); 
-        }
+      ResultSet rs = stmt.getGeneratedKeys();
+      if (rs.next()) {
+          orderId = rs.getInt(1); 
+      }
     }
 
     insertCustomerAddressQuery(userId, customerAddressObject);
 
 
     if (orderId > 0) {
-        if (deliveryOption.equals("storePickup")) {
-            String storeName = addressObject.get("name").getAsString();
-            String street = addressObject.get("street").getAsString();
-            String city = addressObject.get("city").getAsString();
-            String state = addressObject.get("state").getAsString();
-            String zipCode = addressObject.get("zip").getAsString();
-            String pickupDate = deliveryDate;  
+      if (deliveryOption.equals("storePickup")) {
+        String storeName = addressObject.get("name").getAsString();
+        String street = addressObject.get("street").getAsString();
+        String city = addressObject.get("city").getAsString();
+        String state = addressObject.get("state").getAsString();
+        String zipCode = addressObject.get("zip").getAsString();
+        String pickupDate = deliveryDate;  
 
-            storePickupId = saveInStorePickup(orderId, storeId, storeName, street, city, state, zipCode, pickupDate);
-            System.out.println("Store pickup ID saved: " + storePickupId);
+        storePickupId = saveInStorePickup(orderId, storeId, storeName, street, city, state, zipCode, pickupDate);
+        System.out.println("Store pickup ID saved: " + storePickupId);
 
-            updateOrderWithStorePickupId(orderId, storeId, storePickupId);
-        } else if (deliveryOption.equals("homeDelivery")) {
+        updateOrderWithStorePickupId(orderId, storeId, storePickupId);
+      } else if (deliveryOption.equals("homeDelivery")) {
 
-            String name = addressObject.get("name").getAsString();
-            String street = addressObject.get("street").getAsString();
-            String city = addressObject.get("city").getAsString();
-            String state = addressObject.get("state").getAsString();
-            String zipCode = addressObject.get("zip_code").getAsString();
+        String name = addressObject.get("name").getAsString();
+        String street = addressObject.get("street").getAsString();
+        String city = addressObject.get("city").getAsString();
+        String state = addressObject.get("state").getAsString();
+        String zipCode = addressObject.get("zip_code").getAsString();
 
-            homeDeliveryId = saveHomeDelivery(userId, name, street, city, state, zipCode);
-            System.out.println("Home delivery ID saved: " + homeDeliveryId);
+        homeDeliveryId = saveHomeDelivery(userId, name, street, city, state, zipCode);
+        System.out.println("Home delivery ID saved: " + homeDeliveryId);
 
-            updateOrderWithHomeDeliveryId(orderId, homeDeliveryId);
-        }
+        updateOrderWithHomeDeliveryId(orderId, homeDeliveryId);
+      }
     }
 
     return orderId;
-}
+  }
 
 
-public static void updateOrderWithStorePickupId(int orderId, int storeId, int storePickupId) throws SQLException {
-  System.out.println(storePickupId + " " + orderId);
+  public static void updateOrderWithStorePickupId(int orderId, int storeId, int storePickupId) throws SQLException {
+    System.out.println(storePickupId + " " + orderId);
     String updateQuery = "UPDATE orders SET store_id = ?, store_pickup_id = ? WHERE order_id = ?";
     
     try (Connection conn = getConnection(); PreparedStatement stmt = conn.prepareStatement(updateQuery)) {
-        stmt.setInt(1, storeId);
-        stmt.setInt(2, storePickupId);
-        stmt.setInt(3, orderId);
-        stmt.executeUpdate();
+      stmt.setInt(1, storeId);
+      stmt.setInt(2, storePickupId);
+      stmt.setInt(3, orderId);
+      stmt.executeUpdate();
     }
-}
+  }
 
-public static void updateOrderWithHomeDeliveryId(int orderId, int homeDeliveryId) throws SQLException {
+  public static void updateOrderWithHomeDeliveryId(int orderId, int homeDeliveryId) throws SQLException {
     String updateQuery = "UPDATE orders SET home_delivery_id = ? WHERE order_id = ?";
     
     try (Connection conn = getConnection(); PreparedStatement stmt = conn.prepareStatement(updateQuery)) {
-        stmt.setInt(1, homeDeliveryId);
-        stmt.setInt(2, orderId);
-        stmt.executeUpdate();
+      stmt.setInt(1, homeDeliveryId);
+      stmt.setInt(2, orderId);
+      stmt.executeUpdate();
     }
-}
+  }
 
-
-
-    public static void saveOrderItems(int orderId, JsonArray itemsArray) throws SQLException {
-        String query = "INSERT INTO order_items (order_id, product_id, quantity, price) VALUES (?, ?, ?, ?)";
-        try (Connection conn = getConnection(); PreparedStatement stmt = conn.prepareStatement(query)) {
-            for (int i = 0; i < itemsArray.size(); i++) {
-                JsonObject item = itemsArray.get(i).getAsJsonObject();
-                stmt.setInt(1, orderId);
-                stmt.setString(2, item.get("id").getAsString());
-                stmt.setInt(3, item.get("quantity").getAsInt());
-                stmt.setDouble(4, item.get("price").getAsDouble());
-                stmt.addBatch();
-            }
-            stmt.executeBatch();
-        }
-    }
-    
-    public static void insertCustomerAddressQuery(int userId, JsonObject customerAddressObject) throws SQLException {
-
-      String street = customerAddressObject.get("street").getAsString();
-      String city = customerAddressObject.get("city").getAsString();
-      String state = customerAddressObject.get("state").getAsString();
-      String zipCode = customerAddressObject.get("zip_code").getAsString();
-
-      String query = "INSERT INTO customer_address (street, city, state, zip_code, user_id) VALUES (?, ?, ?, ?, ?)";
-      try (Connection conn = getConnection(); PreparedStatement stmt = conn.prepareStatement(query)) {
-        stmt.setString(1, street);
-        stmt.setString(2, city);
-        stmt.setString(3, state);
-        stmt.setString(4, zipCode);
-        stmt.setInt(5, userId);
+  public static void saveOrderItems(int orderId, JsonArray itemsArray) throws SQLException {
+    String query = "INSERT INTO order_items (order_id, product_id, quantity, price) VALUES (?, ?, ?, ?)";
+    try (Connection conn = getConnection(); PreparedStatement stmt = conn.prepareStatement(query)) {
+      for (int i = 0; i < itemsArray.size(); i++) {
+        JsonObject item = itemsArray.get(i).getAsJsonObject();
+        stmt.setInt(1, orderId);
+        stmt.setString(2, item.get("id").getAsString());
+        stmt.setInt(3, item.get("quantity").getAsInt());
+        stmt.setDouble(4, item.get("price").getAsDouble());
         stmt.addBatch();
-        stmt.executeBatch();
+      }
+      stmt.executeBatch();
+    }
+  }
+    
+  public static void insertCustomerAddressQuery(int userId, JsonObject customerAddressObject) throws SQLException {
+    String street = customerAddressObject.get("street").getAsString();
+    String city = customerAddressObject.get("city").getAsString();
+    String state = customerAddressObject.get("state").getAsString();
+    String zipCode = customerAddressObject.get("zip_code").getAsString();
+
+    String query = "INSERT INTO customer_address (street, city, state, zip_code, user_id) VALUES (?, ?, ?, ?, ?)";
+    try (Connection conn = getConnection(); PreparedStatement stmt = conn.prepareStatement(query)) {
+      stmt.setString(1, street);
+      stmt.setString(2, city);
+      stmt.setString(3, state);
+      stmt.setString(4, zipCode);
+      stmt.setInt(5, userId);
+      stmt.addBatch();
+      stmt.executeBatch();
+    }
+  }
+
+  public static int saveHomeDelivery(int userId, String name, String street, String city, String state, String zipCode) throws SQLException {
+    System.out.println("Inside saveHomeDelivery method ----------------------------");
+    String query = "INSERT INTO home_delivery (user_id, name, street, city, state, zip_code) " +
+                  "VALUES (?, ?, ?, ?, ?, ?)";
+    String generatedColumns[] = { "home_delivery_id" };
+
+    try (Connection conn = getConnection();
+      PreparedStatement stmt = conn.prepareStatement(query, generatedColumns)) {
+
+      stmt.setInt(1, userId);
+      stmt.setString(2, name);       
+      stmt.setString(3, street);     
+      stmt.setString(4, city);       
+      stmt.setString(5, state);      
+      stmt.setString(6, zipCode);    
+
+      int rows = stmt.executeUpdate();
+      System.out.println("Home delivery inserted, rows affected: " + rows);
+
+      try (ResultSet rs = stmt.getGeneratedKeys()) {
+        if (rs.next()) {
+          int homeDeliveryId = rs.getInt(1);
+          System.out.println("Generated home_delivery_id: " + homeDeliveryId);
+          return homeDeliveryId; 
+        }
       }
     }
+    throw new SQLException("Failed to insert home delivery or retrieve home_delivery_id.");
+  }
 
-    public static int saveHomeDelivery(int userId, String name, String street, String city, String state, String zipCode) throws SQLException {
-      System.out.println("Inside saveHomeDelivery method ----------------------------");
-      String query = "INSERT INTO home_delivery (user_id, name, street, city, state, zip_code) " +
-                    "VALUES (?, ?, ?, ?, ?, ?)";
-      String generatedColumns[] = { "home_delivery_id" };
-
-      try (Connection conn = getConnection();
-          PreparedStatement stmt = conn.prepareStatement(query, generatedColumns)) {
-
-          stmt.setInt(1, userId);
-          stmt.setString(2, name);       
-          stmt.setString(3, street);     
-          stmt.setString(4, city);       
-          stmt.setString(5, state);      
-          stmt.setString(6, zipCode);    
-
-          int rows = stmt.executeUpdate();
-          System.out.println("Home delivery inserted, rows affected: " + rows);
-
-          try (ResultSet rs = stmt.getGeneratedKeys()) {
-              if (rs.next()) {
-                  int homeDeliveryId = rs.getInt(1);
-                  System.out.println("Generated home_delivery_id: " + homeDeliveryId);
-                  return homeDeliveryId; 
-              }
-          }
-      }
-      throw new SQLException("Failed to insert home delivery or retrieve home_delivery_id.");
-    }
-
-    public static int saveInStorePickup(int orderId, int storeId, String storeName, String street, String city, String state, String zipCode, String pickupDate) throws SQLException {
+  public static int saveInStorePickup(int orderId, int storeId, String storeName, String street, String city, String state, String zipCode, String pickupDate) throws SQLException {
     String query = "INSERT INTO in_store_pickup (order_id, store_id, storeName, street, city, state, zip_code, pickup_date) "
-                 + "VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+                  + "VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
     
     try (Connection conn = getConnection();
-         PreparedStatement stmt = conn.prepareStatement(query, Statement.RETURN_GENERATED_KEYS)) {
+        PreparedStatement stmt = conn.prepareStatement(query, Statement.RETURN_GENERATED_KEYS)) {
 
-        stmt.setInt(1, orderId);
-        stmt.setInt(2, storeId);
-        stmt.setString(3, storeName);
-        stmt.setString(4, street); 
-        stmt.setString(5, city);  
-        stmt.setString(6, state); 
-        stmt.setString(7, zipCode);  
-        stmt.setString(8, pickupDate); 
+      stmt.setInt(1, orderId);
+      stmt.setInt(2, storeId);
+      stmt.setString(3, storeName);
+      stmt.setString(4, street); 
+      stmt.setString(5, city);  
+      stmt.setString(6, state); 
+      stmt.setString(7, zipCode);  
+      stmt.setString(8, pickupDate); 
 
-        stmt.executeUpdate();
+      stmt.executeUpdate();
 
-        ResultSet rs = stmt.getGeneratedKeys();
-        if (rs.next()) {
-            return rs.getInt(1); 
-        }
+      ResultSet rs = stmt.getGeneratedKeys();
+      if (rs.next()) {
+        return rs.getInt(1); 
+      }
     }
     return -1;
-}
+  }
 
-    public static void removeItemsFromCart(String username) throws SQLException {
-        int userId = getUserIdByUsername(username);
-        String query = "DELETE FROM cart_items WHERE cart_id = (SELECT cart_id FROM cart WHERE user_id = ?)";
-        try (Connection conn = getConnection(); PreparedStatement stmt = conn.prepareStatement(query)) {
-            stmt.setInt(1, userId);
-            stmt.executeUpdate();
-        }
+  public static void removeItemsFromCart(String username) throws SQLException {
+    int userId = getUserIdByUsername(username);
+    String query = "DELETE FROM cart_items WHERE cart_id = (SELECT cart_id FROM cart WHERE user_id = ?)";
+    try (Connection conn = getConnection(); PreparedStatement stmt = conn.prepareStatement(query)) {
+      stmt.setInt(1, userId);
+      stmt.executeUpdate();
     }
+  }
 
-    public static boolean cancelOrder(String confirmationNumber) throws SQLException {
-        String query = "UPDATE orders SET status = 'orderCanceled' WHERE confirmation_number = ?";
-
-        try (Connection conn = getConnection();
-             PreparedStatement stmt = conn.prepareStatement(query)) {
-
-            stmt.setString(1, confirmationNumber);
-            int rowsUpdated = stmt.executeUpdate();
-
-            return rowsUpdated > 0;
-        }
-    }
-
-    public static JsonObject getProductReviewData(String productId, String username, String confirmationNumber) throws SQLException {
-    String query = "SELECT p.product_name, p.category, p.price AS price, p.manufacturer, " +
-                   "o.delivery_option, s.store_id, s.zip_code, s.city, s.state " +
-                   "FROM products p " +
-                   "JOIN order_items oi ON p.product_id = oi.product_id " +
-                   "JOIN orders o ON oi.order_id = o.order_id " +
-                   "LEFT JOIN in_store_pickup s ON o.store_pickup_id = s.store_pickup_id " +
-                   "JOIN users u ON o.user_id = u.user_id " +
-                   "WHERE p.product_id = ? AND u.username = ? AND o.confirmation_number = ?";
+  public static boolean cancelOrder(String confirmationNumber) throws SQLException {
+    String query = "UPDATE orders SET status = 'orderCanceled' WHERE confirmation_number = ?";
 
     try (Connection conn = getConnection();
-         PreparedStatement stmt = conn.prepareStatement(query)) {
+        PreparedStatement stmt = conn.prepareStatement(query)) {
 
-        stmt.setString(1, productId);
-        stmt.setString(2, username);
-        stmt.setString(3, confirmationNumber);
+      stmt.setString(1, confirmationNumber);
+      int rowsUpdated = stmt.executeUpdate();
 
-        ResultSet rs = stmt.executeQuery();
+      return rowsUpdated > 0;
+    }
+  }
 
-        if (rs.next()) {
-            JsonObject jsonResponse = new JsonObject();
-            jsonResponse.addProperty("productName", rs.getString("product_name"));
-            jsonResponse.addProperty("productCategory", rs.getString("category"));
-            jsonResponse.addProperty("productPrice", rs.getDouble("price"));
-            jsonResponse.addProperty("manufacturer", rs.getString("manufacturer"));
+  public static JsonObject getProductReviewData(String productId, String username, String confirmationNumber) throws SQLException {
+    String query = "SELECT p.product_name, p.category, p.price AS price, p.manufacturer, " +
+                    "o.delivery_option, s.store_id, s.zip_code, s.city, s.state " +
+                    "FROM products p " +
+                    "JOIN order_items oi ON p.product_id = oi.product_id " +
+                    "JOIN orders o ON oi.order_id = o.order_id " +
+                    "LEFT JOIN in_store_pickup s ON o.store_pickup_id = s.store_pickup_id " +
+                    "JOIN users u ON o.user_id = u.user_id " +
+                    "WHERE p.product_id = ? AND u.username = ? AND o.confirmation_number = ?";
 
-            if ("storePickup".equalsIgnoreCase(rs.getString("delivery_option"))) {
-                jsonResponse.addProperty("storeId", rs.getString("store_id"));
-                jsonResponse.addProperty("storeZip", rs.getString("zip_code"));
-                jsonResponse.addProperty("storeCity", rs.getString("city"));
-                jsonResponse.addProperty("storeState", rs.getString("state"));
-            }
+    try (Connection conn = getConnection();
+        PreparedStatement stmt = conn.prepareStatement(query)) {
 
-            return jsonResponse;
+      stmt.setString(1, productId);
+      stmt.setString(2, username);
+      stmt.setString(3, confirmationNumber);
+
+      ResultSet rs = stmt.executeQuery();
+
+      if (rs.next()) {
+        JsonObject jsonResponse = new JsonObject();
+        jsonResponse.addProperty("productName", rs.getString("product_name"));
+        jsonResponse.addProperty("productCategory", rs.getString("category"));
+        jsonResponse.addProperty("productPrice", rs.getDouble("price"));
+        jsonResponse.addProperty("manufacturer", rs.getString("manufacturer"));
+
+        if ("storePickup".equalsIgnoreCase(rs.getString("delivery_option"))) {
+          jsonResponse.addProperty("storeId", rs.getString("store_id"));
+          jsonResponse.addProperty("storeZip", rs.getString("zip_code"));
+          jsonResponse.addProperty("storeCity", rs.getString("city"));
+          jsonResponse.addProperty("storeState", rs.getString("state"));
         }
+
+        return jsonResponse;
+      }
     }
     return null;
-}
+  }
 
-public static JsonArray getAllOrders() throws SQLException {
-        JsonArray jsonOrders = new JsonArray();
-        String query = "SELECT u.username, o.confirmation_number, o.delivery_date, o.order_placed_date, o.status, o.delivery_option " +
-                       "FROM orders o JOIN users u ON o.user_id = u.user_id";
+  public static JsonArray getAllOrders() throws SQLException {
+    JsonArray jsonOrders = new JsonArray();
+    String query = "SELECT u.username, o.confirmation_number, o.delivery_date, o.order_placed_date, o.status, o.delivery_option " +
+                  "FROM orders o JOIN users u ON o.user_id = u.user_id";
 
-        try (Connection conn = getConnection();
-             PreparedStatement stmt = conn.prepareStatement(query);
-             ResultSet rs = stmt.executeQuery()) {
+    try (Connection conn = getConnection();
+      PreparedStatement stmt = conn.prepareStatement(query);
+      ResultSet rs = stmt.executeQuery()) {
 
-            while (rs.next()) {
-                JsonObject jsonOrder = new JsonObject();
-                jsonOrder.addProperty("username", rs.getString("username"));
-                jsonOrder.addProperty("confirmationNumber", rs.getString("confirmation_number"));
-                jsonOrder.addProperty("deliveryDate", rs.getString("delivery_date"));
-                jsonOrder.addProperty("orderPlacedDate", rs.getString("order_placed_date"));
-                jsonOrder.addProperty("status", rs.getString("status"));
-                jsonOrder.addProperty("deliveryOption", rs.getString("delivery_option"));
-                jsonOrders.add(jsonOrder);
-            }
-        }
-
-        return jsonOrders;
-    }
-
-    public static JsonObject getOrderDetailsByConfirmationNumber(String confirmationNumber) throws SQLException {
-        JsonObject jsonOrderDetails = new JsonObject();
-
-        String query = "SELECT u.username, o.confirmation_number, o.delivery_date, o.order_placed_date, o.status, o.delivery_option, oi.items " +
-                       "FROM orders o JOIN users u ON o.user_id = u.user_id " +
-                       "JOIN order_items oi ON o.order_id = oi.order_id " +
-                       "WHERE o.confirmation_number = ?";
-
-        try (Connection conn = getConnection();
-             PreparedStatement stmt = conn.prepareStatement(query)) {
-
-            stmt.setString(1, confirmationNumber);
-            ResultSet rs = stmt.executeQuery();
-
-            if (rs.next()) {
-                jsonOrderDetails.addProperty("username", rs.getString("username"));
-                jsonOrderDetails.addProperty("confirmationNumber", rs.getString("confirmation_number"));
-                jsonOrderDetails.addProperty("deliveryDate", rs.getString("delivery_date"));
-                jsonOrderDetails.addProperty("orderPlacedDate", rs.getString("order_placed_date"));
-                jsonOrderDetails.addProperty("status", rs.getString("status"));
-                jsonOrderDetails.addProperty("deliveryOption", rs.getString("delivery_option"));
-                jsonOrderDetails.addProperty("items", rs.getString("items"));
-            }
-        }
-
-        return jsonOrderDetails;
-    }
-
-    public static ProductInfo getProductByName(String productName) {
-      String query = "SELECT * FROM products WHERE product_name = ?";
-      try (Connection conn = getConnection();
-          PreparedStatement stmt = conn.prepareStatement(query)) {
-
-          stmt.setString(1, productName);
-          ResultSet rs = stmt.executeQuery();
-          
-          if (rs.next()) {
-              return new ProductInfo(
-                  rs.getInt("product_id"),
-                  rs.getString("product_name"),
-                  rs.getString("category"),
-                  rs.getDouble("price"),
-                  rs.getString("manufacturer")
-              );
-          }
-      } catch (SQLException e) {
-          e.printStackTrace();
+      while (rs.next()) {
+        JsonObject jsonOrder = new JsonObject();
+        jsonOrder.addProperty("username", rs.getString("username"));
+        jsonOrder.addProperty("confirmationNumber", rs.getString("confirmation_number"));
+        jsonOrder.addProperty("deliveryDate", rs.getString("delivery_date"));
+        jsonOrder.addProperty("orderPlacedDate", rs.getString("order_placed_date"));
+        jsonOrder.addProperty("status", rs.getString("status"));
+        jsonOrder.addProperty("deliveryOption", rs.getString("delivery_option"));
+        jsonOrders.add(jsonOrder);
       }
-      return null;
     }
 
-    public static void addOrder(String username, String confirmationNumber, String productName, double price, double discount, String deliveryOption) {
-        String query = "INSERT INTO orders (username, confirmation_number, product_name, price, discount, delivery_option) VALUES (?, ?, ?, ?, ?, ?)";
-        try (Connection conn = getConnection();
-            PreparedStatement stmt = conn.prepareStatement(query)) {
+    return jsonOrders;
+  }
 
-            stmt.setString(1, username);
-            stmt.setString(2, confirmationNumber);
-            stmt.setString(3, productName);
-            stmt.setDouble(4, price);
-            stmt.setDouble(5, discount);
-            stmt.setString(6, deliveryOption);
-            stmt.executeUpdate();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
+  public static JsonObject getOrderDetailsByConfirmationNumber(String confirmationNumber) throws SQLException {
+    JsonObject jsonOrderDetails = new JsonObject();
+
+    String query = "SELECT u.username, o.confirmation_number, o.delivery_date, o.order_placed_date, o.status, o.delivery_option, oi.items " +
+                    "FROM orders o JOIN users u ON o.user_id = u.user_id " +
+                    "JOIN order_items oi ON o.order_id = oi.order_id " +
+                    "WHERE o.confirmation_number = ?";
+
+    try (Connection conn = getConnection();
+        PreparedStatement stmt = conn.prepareStatement(query)) {
+
+      stmt.setString(1, confirmationNumber);
+      ResultSet rs = stmt.executeQuery();
+
+      if (rs.next()) {
+        jsonOrderDetails.addProperty("username", rs.getString("username"));
+        jsonOrderDetails.addProperty("confirmationNumber", rs.getString("confirmation_number"));
+        jsonOrderDetails.addProperty("deliveryDate", rs.getString("delivery_date"));
+        jsonOrderDetails.addProperty("orderPlacedDate", rs.getString("order_placed_date"));
+        jsonOrderDetails.addProperty("status", rs.getString("status"));
+        jsonOrderDetails.addProperty("deliveryOption", rs.getString("delivery_option"));
+        jsonOrderDetails.addProperty("items", rs.getString("items"));
+      }
     }
 
-    public static void updateOrder(JsonObject jsonObject) throws SQLException {
-        String query = "UPDATE orders SET delivery_date = ?, delivery_option = ?, status = ?, order_placed_date = ? WHERE confirmation_number = ?";
+    return jsonOrderDetails;
+  }
 
-        try (Connection conn = getConnection();
-             PreparedStatement stmt = conn.prepareStatement(query)) {
+  public static ProductInfo getProductByName(String productName) {
+    String query = "SELECT * FROM products WHERE product_name = ?";
+    try (Connection conn = getConnection();
+      PreparedStatement stmt = conn.prepareStatement(query)) {
 
-            stmt.setString(1, jsonObject.get("deliveryDate").getAsString());
-            stmt.setString(2, jsonObject.get("deliveryOption").getAsString());
-            stmt.setString(3, jsonObject.get("status").getAsString());
-            stmt.setString(4, jsonObject.get("orderPlacedDate").getAsString());
-            stmt.setString(5, jsonObject.get("confirmationNumber").getAsString());
-
-            stmt.executeUpdate();
-        }
+      stmt.setString(1, productName);
+      ResultSet rs = stmt.executeQuery();
+      
+      if (rs.next()) {
+          return new ProductInfo(
+            rs.getInt("product_id"),
+            rs.getString("product_name"),
+            rs.getString("category"),
+            rs.getDouble("price"),
+            rs.getString("manufacturer")
+          );
+      }
+    } catch (SQLException e) {
+      e.printStackTrace();
     }
+    return null;
+  }
+
+  public static void addOrder(String username, String confirmationNumber, String productName, double price, double discount, String deliveryOption) {
+    String query = "INSERT INTO orders (username, confirmation_number, product_name, price, discount, delivery_option) VALUES (?, ?, ?, ?, ?, ?)";
+    try (Connection conn = getConnection();
+      PreparedStatement stmt = conn.prepareStatement(query)) {
+
+      stmt.setString(1, username);
+      stmt.setString(2, confirmationNumber);
+      stmt.setString(3, productName);
+      stmt.setDouble(4, price);
+      stmt.setDouble(5, discount);
+      stmt.setString(6, deliveryOption);
+      stmt.executeUpdate();
+    } catch (SQLException e) {
+      e.printStackTrace();
+    }
+  }
+
+  public static void updateOrder(JsonObject jsonObject) throws SQLException {
+    String query = "UPDATE orders SET delivery_date = ?, delivery_option = ?, status = ?, order_placed_date = ? WHERE confirmation_number = ?";
+
+    try (Connection conn = getConnection();
+        PreparedStatement stmt = conn.prepareStatement(query)) {
+
+      stmt.setString(1, jsonObject.get("deliveryDate").getAsString());
+      stmt.setString(2, jsonObject.get("deliveryOption").getAsString());
+      stmt.setString(3, jsonObject.get("status").getAsString());
+      stmt.setString(4, jsonObject.get("orderPlacedDate").getAsString());
+      stmt.setString(5, jsonObject.get("confirmationNumber").getAsString());
+
+      stmt.executeUpdate();
+    }
+  }
 
     public static boolean deleteOrder(String confirmationNumber) throws SQLException {
         String query = "DELETE FROM orders WHERE confirmation_number = ?";
